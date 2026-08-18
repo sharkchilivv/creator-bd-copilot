@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creator BD Copilot - AI达人沟通回复工作台</title>
+<link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo">BD</div>
+    <div>
+      <div class="brand-name">Creator BD Copilot</div>
+      <div class="brand-sub">AI-Powered Creator Communication Workspace</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="/" class="active">工作台</a>
+    <a href="/search">话术库搜索</a>
+    <a href="/dashboard">Dashboard</a>
+  </nav>
+  <div class="topbar-right">
+    <span id="llm-badge" class="llm-badge off" style="cursor:pointer" onclick="openLLMDrawer()" title="点击配置 LLM">检测中…</span>
+    <button class="btn btn-sm" onclick="openBrandDrawer()">⚙ 品牌规则</button>
+    <button class="btn btn-sm" onclick="openCreatorDrawer()">＋ 新建达人</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="workbench">
+
+    <!-- ================= 左栏：达人信息 ================= -->
+    <div class="col-left">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>达人档案 <span class="spacer"></span>
+          <button class="btn btn-sm" onclick="openCreatorDrawer(currentCreator)">编辑</button>
+        </div>
+        <div id="creator-list"></div>
+        <div id="creator-detail"></div>
+      </div>
+    </div>
+
+    <!-- ================= 中栏：AI达人回复 ================= -->
+    <div class="col-center">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>AI达人回复 <span class="spacer"></span>
+          <span class="muted" style="font-size:11px;text-transform:none;font-weight:400">达人消息 → 理解 → 检索 → 判断 → 回复</span>
+        </div>
+
+        <!-- 顶部配置 -->
+        <div class="form-row">
+          <div>
+            <label>沟通平台</label>
+            <select id="cfg-platform">
+              <option>TikTok DM</option>
+              <option>TikTok Shop</option>
+              <option>Email</option>
+              <option>其他</option>
+            </select>
+          </div>
+          <div>
+            <label>当前合作阶段</label>
+            <select id="cfg-stage">
+              <option>首次邀约</option><option>达人感兴趣</option><option>合作机制确认</option>
+              <option>报价沟通</option><option>样品申请</option><option>样品审核</option>
+              <option>发货</option><option>到货</option><option>视频制作</option>
+              <option>催拍</option><option>催发</option><option>发布</option>
+              <option>广告投放</option><option>二次合作</option><option>投诉</option>
+              <option>拒绝合作</option><option>物流异常</option><option>其他</option>
+            </select>
+          </div>
+          <div>
+            <label>回复目标</label>
+            <select id="cfg-goal">
+              <option value="">自动判断</option>
+              <option>推进样品申请</option><option>解释合作机制</option><option>保持合作意愿</option>
+              <option>催视频</option><option>索要Ad Code</option><option>引导换样品</option>
+              <option>解释异常</option><option>挽回达人</option><option>礼貌拒绝</option>
+              <option>自定义…</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>回复语气</label>
+            <select id="cfg-tone">
+              <option>真诚友好</option><option>简洁直接</option><option>高情商</option>
+              <option>更亲切</option><option>更专业</option>
+            </select>
+          </div>
+          <div>
+            <label>回复长度</label>
+            <select id="cfg-length">
+              <option>短</option><option selected>中</option><option>长</option>
+            </select>
+          </div>
+          <div>
+            <label>产品</label>
+            <select id="cfg-product">
+              <option value="">（未指定）</option>
+            </select>
+          </div>
+          <div style="flex:0 0 120px">
+            <label>关键词</label>
+            <input id="cfg-keywords" type="text" placeholder="可选，如：固定报酬" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 达人消息 -->
+        <label>达人消息 <span class="muted" style="font-weight:400">（粘贴达人发来的消息，支持日文/中文）</span></label>
+        <textarea id="msg-input" class="msg-input" placeholder="粘贴达人发来的消息……&#10;例：動画制作の場合、固定報酬はいくらですか？"></textarea>
+
+        <div class="demo-chips">
+          <span class="muted" style="font-size:11.5px;padding:4px 0;margin-right:4px">Demo 案例：</span>
+          <span class="chip" onclick="loadDemo(1, this)">① 达人感兴趣</span>
+          <span class="chip" onclick="loadDemo(2, this)">② 询问固定报酬</span>
+          <span class="chip" onclick="loadDemo(3, this)">③ 催视频·忙</span>
+          <span class="chip" onclick="loadDemo(4, this)">④ 支架款咨询</span>
+          <span class="chip" onclick="loadDemo(5, this)">⑤ 物流未收到</span>
+        </div>
+
+        <button id="btn-generate" class="btn btn-primary generate-btn" onclick="generate()">
+          ✨ AI 分析并生成回复
+        </button>
+
+        <!-- 流程步骤指示 -->
+        <div id="pipeline" style="display:none;margin-top:12px;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:10px 14px"></div>
+
+        <!-- 分析结果 -->
+        <div id="analysis-area" style="display:none;margin-top:16px"></div>
+
+        <!-- 回复卡片 -->
+        <div id="replies-area" style="display:none;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- ================= 右栏：RAG 检索 ================= -->
+    <div class="col-right">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>相关历史话术 <span class="spacer"></span>
+          <span class="tag tag-purple" id="kb-count">—</span>
+        </div>
+        <div id="kb-results">
+          <div class="empty" style="padding:24px">输入达人消息并点击「AI 分析」后，<br/>这里将展示向量检索召回的历史案例</div>
+        </div>
+        <div id="kb-why" class="retrieval-why" style="display:none"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>知识库 / 检索链路</div>
+        <div class="step-line done"><span class="step-dot">1</span><span class="step-txt">JSONL 知识库（57 条场景）解析为 Chunk</span></div>
+        <div class="step-line done"><span class="step-dot">2</span><span class="step-txt">multilingual-e5-small Embedding 向量化</span></div>
+        <div class="step-line done"><span class="step-dot">3</span><span class="step-txt">FAISS 向量索引（余弦相似度）</span></div>
+        <div class="step-line done"><span class="step-dot">4</span><span class="step-txt">Query 组装 → Top K 召回 → 阶段/关键词加权</span></div>
+        <div class="step-line done"><span class="step-dot">5</span><span class="step-txt">品牌规则 + 达人上下文 + RAG 案例 → LLM</span></div>
+        <div class="step-line" id="kb-count-line"><span class="step-dot">—</span><span class="step-txt">等待索引…</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================= 抽屉：品牌规则 ================= -->
+<div id="mask" class="drawer-mask" onclick="hideDrawer('brandDrawer');hideDrawer('creatorDrawer');hideDrawer('llmDrawer')"></div>
+
+<!-- ================= 抽屉：LLM 配置 ================= -->
+<div id="llmDrawer" class="drawer">
+  <div class="drawer-head">LLM 模型配置 <span class="muted" style="font-size:12px;font-weight:400">OpenAI 兼容接口</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('llmDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div id="llm-current-status" class="mb12"></div>
+    <label>Base URL</label>
+    <input id="llm-base-url" type="text" placeholder="https://api.openai.com/v1 或任意 OpenAI 兼容接口" />
+    <label>API Key</label>
+    <input id="llm-api-key" type="password" placeholder="sk-..." autocomplete="off" />
+    <label>模型名</label>
+    <input id="llm-model" type="text" placeholder="gpt-4o-mini / deepseek-chat / qwen-max 等" />
+    <div class="flex mt12" style="gap:8px">
+      <button id="llm-test-btn" class="btn" onclick="testLLM()">测试连接</button>
+      <span class="muted" style="font-size:12px">保存后立即切换模式，无需重启</span>
+    </div>
+    <div class="divider"></div>
+    <div class="step-line done"><span class="step-dot">i</span><span class="step-txt">配置后：达人消息 → RAG Top3 → 真实 LLM（系统指令词 v2）→ 3 个回复</span></div>
+    <div class="step-line"><span class="step-dot">i</span><span class="step-txt">不配置：Demo Mode，规则生成器保证流程可演示</span></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="clearLLMConfig()">清除配置</button>
+    <button class="btn" onclick="hideDrawer('llmDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveLLMConfig()">保存并启用</button>
+  </div>
+</div>
+<div id="brandDrawer" class="drawer">
+  <div class="drawer-head">品牌规则配置 <span class="muted" style="font-size:12px;font-weight:400">知识库负责经验，规则库负责边界</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('brandDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div><label>品牌</label><input id="br-brand" type="text" /></div>
+      <div><label>市场</label><input id="br-market" type="text" /></div>
+      <div><label>平台</label><input id="br-platform" type="text" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>当前佣金规则</label><input id="br-commission" type="text" placeholder="如：10% 成果报酬" /></div>
+    </div>
+    <div class="flex mt8">
+      <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600">
+        <input id="br-fixed" type="checkbox" /> 允许固定报酬
+      </label>
+      <div style="flex:1"><label>固定报酬范围</label><input id="br-fixed-range" type="text" placeholder="如：不提供 / 1条2万日元" /></div>
+    </div>
+    <label>广告支持规则</label>
+    <input id="br-ad" type="text" placeholder="如：单条视频2万日元以上广告预算（需确认）" />
+    <label>样品规则</label>
+    <input id="br-sample" type="text" placeholder="如：免费寄送1件，TikTok Shop自行申请" />
+    <label>物流规则</label>
+    <input id="br-ship" type="text" placeholder="如：申请确认后尽快发货" />
+    <label>促销配置</label>
+    <input id="br-promo" type="text" placeholder="如：暂无限时促销 / 限时赠品配置" />
+    <label>当前产品（每行一个：名称：卖点）</label>
+    <textarea id="br-products" rows="4"></textarea>
+    <label>库存状态（JSON）</label>
+    <textarea id="br-inventory" rows="2" placeholder='{"KORI": "有货", "LINKOO": "缺货"}'></textarea>
+    <label>不可承诺事项（每行一个）</label>
+    <textarea id="br-forbidden-promises" rows="3" placeholder="固定报酬金额&#10;具体发货日期&#10;缺货恢复时间"></textarea>
+    <label>禁用词（每行一个）</label>
+    <textarea id="br-forbidden-words" rows="2" placeholder="最低价&#10;限时赠品（未配置时）"></textarea>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="hideDrawer('brandDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveBrandRules()">保存规则</button>
+  </div>
+</div>
+
+<!-- ================= 抽屉：达人编辑 ================= -->
+<div id="creatorDrawer" class="drawer">
+  <div class="drawer-head">达人档案 <span class="muted" style="font-size:12px;font-weight:400">MVP 简单档案</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('creatorDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <input id="cr-id" type="hidden" />
+    <div class="form-row">
+      <div><label>达人昵称</label><input id="cr-nickname" type="text" /></div>
+      <div><label>TikTok账号</label><input id="cr-account" type="text" placeholder="@xxx" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>达人等级</label>
+        <select id="cr-level">
+          <option value="">（未设置）</option>
+          <option>头部达人 (100万+粉)</option><option>中腰部达人 (10万-50万粉)</option>
+          <option>尾部达人 (1万-10万粉)</option><option>素人 (1万粉以下)</option>
+        </select>
+      </div>
+      <div><label>内容领域</label><input id="cr-vertical" type="text" placeholder="美妆 / 数码 / 生活…" /></div>
+    </div>
+    <label>粉丝画像</label><input id="cr-audience_profile" type="text" />
+    <label>历史合作情况</label><input id="cr-history" type="text" placeholder="如：已合作2次，表现良好" />
+    <div class="form-row">
+      <div><label>当前产品</label><input id="cr-current_product" type="text" /></div>
+      <div><label>当前合作阶段</label>
+        <select id="cr-cooperation_stage">
+          <option value="">（未设置）</option>
+          <option>首次邀约</option><option>达人感兴趣</option><option>合作机制确认</option>
+          <option>报价沟通</option><option>样品申请</option><option>样品审核</option>
+          <option>发货</option><option>到货</option><option>催拍/催发</option>
+          <option>发布</option><option>广告投放</option><option>二次合作</option>
+          <option>物流异常</option><option>其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>佣金偏好</label><input id="cr-commission_pref" type="text" placeholder="成果报酬 / 要求固定报酬…" /></div>
+      <div><label>报价情况</label><input id="cr-quote_status" type="text" placeholder="未报价 / 已报价…" /></div>
+    </div>
+    <label>特殊要求</label><input id="cr-special_requirements" type="text" />
+    <label>运营备注</label><textarea id="cr-notes" rows="2"></textarea>
+    <label>历史沟通摘要</label><textarea id="cr-conversation_summary" rows="2"></textarea>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="hideDrawer('creatorDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveCreator()">保存达人</button>
+  </div>
+</div>
+
+<script src="/static/js/common.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

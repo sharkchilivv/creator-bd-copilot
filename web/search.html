@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>话术库搜索 - Creator BD Copilot</title>
+<link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo">BD</div>
+    <div>
+      <div class="brand-name">Creator BD Copilot</div>
+      <div class="brand-sub">AI-Powered Creator Communication Workspace</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="/">工作台</a>
+    <a href="/search" class="active">话术库搜索</a>
+    <a href="/dashboard">Dashboard</a>
+  </nav>
+  <div class="topbar-right">
+    <span id="llm-badge" class="llm-badge off" style="cursor:pointer" onclick="openLLMDrawer()" title="点击配置 LLM">检测中…</span>
+    <button class="btn btn-sm" onclick="openBrandDrawer()">⚙ 品牌规则</button>
+  </div>
+</div>
+
+<div class="page" style="max-width:1100px">
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>话术库搜索
+      <span class="spacer"></span>
+      <span class="muted" style="font-size:11px;text-transform:none;font-weight:400">关键词搜索 + 向量语义搜索（RAG）</span>
+    </div>
+
+    <div class="search-box">
+      <input id="search-input" type="search" placeholder="输入场景关键词，如：固定报酬 / 催视频 / 缺货 / Ad Code…"
+        onkeydown="if(event.key==='Enter')doSearch()" />
+      <button class="btn btn-primary" onclick="doSearch()">搜索</button>
+    </div>
+
+    <div class="search-chips" id="hot-tags">
+      <span class="muted" style="font-size:11.5px;padding:4px 0;margin-right:4px">热门：</span>
+      <span id="chip-list"></span>
+      <button id="edit-toggle" class="chip-edit-toggle" onclick="toggleEditMode()" title="编辑模式：开启后可点击标签上的 × 删减热门标签">✎</button>
+    </div>
+
+    <div id="search-status" class="muted" style="font-size:12px;margin-bottom:10px"></div>
+    <div id="search-results"></div>
+  </div>
+</div>
+
+<div id="mask" class="drawer-mask" onclick="hideDrawer('brandDrawer');hideDrawer('llmDrawer')"></div>
+<div id="llmDrawer" class="drawer">
+  <div class="drawer-head">LLM 模型配置 <span class="muted" style="font-size:12px;font-weight:400">OpenAI 兼容接口</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('llmDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div id="llm-current-status" class="mb12"></div>
+    <label>Base URL</label><input id="llm-base-url" type="text" placeholder="https://api.openai.com/v1" />
+    <label>API Key</label><input id="llm-api-key" type="password" placeholder="sk-..." autocomplete="off" />
+    <label>模型名</label><input id="llm-model" type="text" placeholder="gpt-4o-mini" />
+    <div class="flex mt12" style="gap:8px">
+      <button id="llm-test-btn" class="btn" onclick="testLLM()">测试连接</button>
+      <span class="muted" style="font-size:12px">保存后立即切换模式</span>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="clearLLMConfig()">清除配置</button>
+    <button class="btn" onclick="hideDrawer('llmDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveLLMConfig()">保存并启用</button>
+  </div>
+</div>
+<div id="brandDrawer" class="drawer">
+  <div class="drawer-head">品牌规则配置 <span class="muted" style="font-size:12px;font-weight:400">知识库负责经验，规则库负责边界</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('brandDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div><label>品牌</label><input id="br-brand" type="text" /></div>
+      <div><label>市场</label><input id="br-market" type="text" /></div>
+      <div><label>平台</label><input id="br-platform" type="text" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>当前佣金规则</label><input id="br-commission" type="text" /></div>
+    </div>
+    <div class="flex mt8">
+      <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600">
+        <input id="br-fixed" type="checkbox" /> 允许固定报酬
+      </label>
+      <div style="flex:1"><label>固定报酬范围</label><input id="br-fixed-range" type="text" /></div>
+    </div>
+    <label>广告支持规则</label><input id="br-ad" type="text" />
+    <label>样品规则</label><input id="br-sample" type="text" />
+    <label>物流规则</label><input id="br-ship" type="text" />
+    <label>促销配置</label><input id="br-promo" type="text" />
+    <label>当前产品（每行一个：名称：卖点）</label><textarea id="br-products" rows="4"></textarea>
+    <label>库存状态（JSON）</label><textarea id="br-inventory" rows="2"></textarea>
+    <label>不可承诺事项（每行一个）</label><textarea id="br-forbidden-promises" rows="3"></textarea>
+    <label>禁用词（每行一个）</label><textarea id="br-forbidden-words" rows="2"></textarea>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="hideDrawer('brandDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveBrandRules()">保存规则</button>
+  </div>
+</div>
+
+<script src="/static/js/common.js"></script>
+<script>
+/* ---------------- 热门标签：状态 + 本地持久化 ---------------- */
+const DEFAULT_HOT = ["收费","固定报酬","Ad Code","缺货","物流","催视频","二次合作","换样品","对镜拍","直播","群发道歉","违规申诉","brief"];
+let customTags = JSON.parse(localStorage.getItem("cb_hot_custom") || "[]");
+let removedDefaults = JSON.parse(localStorage.getItem("cb_hot_removed") || "[]");
+let editMode = false;
+let addingNew = false;
+
+function chipHTML(tag, isCustom) {
+  const rm = editMode
+    ? `<span class="chip-rm" onclick="event.stopPropagation();removeTag('${esc(tag)}', ${isCustom})">×</span>`
+    : "";
+  const click = editMode ? "" : `onclick="quickSearch('${esc(tag)}')"`;
+  return `<span class="chip ${isCustom ? "chip-custom" : ""}" ${click} title="${editMode ? "点击 × 可删除" : "点击搜索"}">${esc(tag)}${rm}</span>`;
+}
+function addSlotHTML() {
+  if (addingNew) {
+    return `<input id="chip-input" class="chip-input" placeholder="输入标签名" autocomplete="off"
+      onkeydown="if(event.key==='Enter')commitNewChip()" onblur="cancelNewChip()" />`;
+  }
+  return `<span class="chip chip-add" onclick="startNewChip()" title="添加自定义标签">+</span>`;
+}
+function renderHot() {
+  const list = document.getElementById("chip-list");
+  const defaults = DEFAULT_HOT.filter((t) => !removedDefaults.includes(t)).map((t) => chipHTML(t, false));
+  const customs = customTags.map((t) => chipHTML(t, true));
+  list.innerHTML = defaults.concat(customs).join("") + addSlotHTML();
+  const tog = document.getElementById("edit-toggle");
+  if (tog) tog.classList.toggle("on", editMode);
+}
+function startNewChip() {
+  addingNew = true;
+  if (editMode) editMode = false;
+  renderHot();
+  const inp = document.getElementById("chip-input");
+  if (inp) inp.focus();
+}
+function commitNewChip() {
+  const inp = document.getElementById("chip-input");
+  const name = (inp && inp.value ? inp.value : "").trim();
+  addingNew = false;
+  if (name) {
+    if (!customTags.includes(name) && !DEFAULT_HOT.includes(name)) {
+      customTags.push(name);
+      localStorage.setItem("cb_hot_custom", JSON.stringify(customTags));
+    }
+    quickSearch(name);
+  }
+  renderHot();
+}
+function cancelNewChip() {
+  const inp = document.getElementById("chip-input");
+  if (inp && !inp.value.trim()) { addingNew = false; renderHot(); }
+}
+function removeTag(tag, isCustom) {
+  if (!confirm("删除标签「" + tag + "」？")) return;
+  if (isCustom) {
+    customTags = customTags.filter((t) => t !== tag);
+    localStorage.setItem("cb_hot_custom", JSON.stringify(customTags));
+  } else {
+    if (!removedDefaults.includes(tag)) removedDefaults.push(tag);
+    localStorage.setItem("cb_hot_removed", JSON.stringify(removedDefaults));
+  }
+  renderHot();
+}
+function toggleEditMode() {
+  editMode = !editMode;
+  if (editMode && addingNew) addingNew = false;
+  renderHot();
+}
+
+function quickSearch(q) {
+  document.getElementById("search-input").value = q;
+  doSearch();
+}
+async function doSearch() {
+  const q = document.getElementById("search-input").value.trim();
+  const box = document.getElementById("search-results");
+  if (!q) { box.innerHTML = '<div class="empty">请输入关键词</div>'; return; }
+  document.getElementById("search-status").textContent = "检索中：向量召回 + 关键词匹配…";
+  box.innerHTML = '<div class="empty">检索中…</div>';
+  const res = await API.get("/api/search?q=" + encodeURIComponent(q) + "&top_k=8");
+  const results = res.results || [];
+  document.getElementById("search-status").textContent = `共找到 ${results.length} 条相关话术（按语义+阶段+关键词加权排序）`;
+  if (!results.length) { box.innerHTML = '<div class="empty">未找到相关话术</div>'; return; }
+  const levelCls = (l) => (l === "high" ? "tag-red" : l === "medium" ? "tag-orange" : "tag-green");
+  box.innerHTML = results.map((r, i) => `
+    <div class="kb-item" onclick="toggleKb(${i})">
+      <div class="flex-between">
+        <span class="kb-match ${r.match > 60 ? "high" : ""}">匹配度 ${r.match}%</span>
+        <span class="tag ${levelCls(r.risk_level)}">${esc((r.risk_level || "low").toUpperCase())}</span>
+      </div>
+      <div class="kb-scenario">${esc(r.scenario)}</div>
+      <div class="kb-meta">分类：${esc(r.category)} · 阶段：${esc(r.cooperation_stage)} · ID：${esc(r.id)}</div>
+      <div class="kb-meta">关键词：${esc((r.keywords || []).join(" / "))}</div>
+      <div class="kb-source" id="src-${i}" style="display:none">${esc(r.source_text)}</div>
+      <div class="kb-notes" id="note-${i}" style="display:none">
+        <b>来源：</b>${esc(r.source_file)}<br/>
+        ${r.notes ? `<b>使用限制：</b>${esc(r.notes)}<br/>` : ""}
+        <b>策略：</b>${esc(r.communication_goal)}
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="event.stopPropagation();copyKbText(${i})">复制话术</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();toggleKb(${i})">查看原文</button>
+      </div>
+    </div>`).join("");
+}
+function toggleKb(i) {
+  const src = document.getElementById("src-" + i);
+  const note = document.getElementById("note-" + i);
+  src.style.display = src.style.display === "none" ? "block" : "none";
+  note.style.display = note.style.display === "none" ? "block" : "none";
+}
+function copyKbText(i) {
+  const el = document.getElementById("src-" + i);
+  copyText(el.textContent, "话术已复制");
+}
+
+/* 初始化热门标签 */
+renderHot();
+</script>
+</body>
+</html>

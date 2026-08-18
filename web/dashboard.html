@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard - Creator BD Copilot</title>
+<link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo">BD</div>
+    <div>
+      <div class="brand-name">Creator BD Copilot</div>
+      <div class="brand-sub">AI-Powered Creator Communication Workspace</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="/">工作台</a>
+    <a href="/search">话术库搜索</a>
+    <a href="/dashboard" class="active">Dashboard</a>
+  </nav>
+  <div class="topbar-right">
+    <span id="llm-badge" class="llm-badge off" style="cursor:pointer" onclick="openLLMDrawer()" title="点击配置 LLM">检测中…</span>
+    <button class="btn btn-sm" onclick="openBrandDrawer()">⚙ 品牌规则</button>
+  </div>
+</div>
+
+<div class="page" style="max-width:1180px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <h2 style="font-size:20px;font-weight:800">运营 Dashboard</h2>
+      <div class="muted" style="font-size:12.5px">达人沟通回复工作台 · 使用效果概览 <span class="tag tag-gray">Demo 数据 + 真实回复统计</span></div>
+    </div>
+    <button class="btn btn-sm" onclick="loadDashboard()">刷新</button>
+  </div>
+
+  <div class="stat-grid" id="stats"></div>
+
+  <div class="dash-grid">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>最常见沟通场景</div>
+      <div id="chart-scenarios"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>回复风格采用分布</div>
+      <div id="chart-styles"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>最近保存的回复 <span class="spacer"></span>
+      <span class="muted" style="font-size:11px;text-transform:none;font-weight:400">运营采用 / 修改的记录，用于统计 AI 直接采用率</span>
+    </div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>时间</th><th>达人</th><th>风格</th><th>方式</th><th>达人消息</th><th>最终回复（前60字）</th></tr></thead>
+      <tbody id="replies-table"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<div id="mask" class="drawer-mask" onclick="hideDrawer('brandDrawer');hideDrawer('llmDrawer')"></div>
+<div id="llmDrawer" class="drawer">
+  <div class="drawer-head">LLM 模型配置 <span class="muted" style="font-size:12px;font-weight:400">OpenAI 兼容接口</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('llmDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div id="llm-current-status" class="mb12"></div>
+    <label>Base URL</label><input id="llm-base-url" type="text" placeholder="https://api.openai.com/v1" />
+    <label>API Key</label><input id="llm-api-key" type="password" placeholder="sk-..." autocomplete="off" />
+    <label>模型名</label><input id="llm-model" type="text" placeholder="gpt-4o-mini" />
+    <div class="flex mt12" style="gap:8px">
+      <button id="llm-test-btn" class="btn" onclick="testLLM()">测试连接</button>
+      <span class="muted" style="font-size:12px">保存后立即切换模式</span>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="clearLLMConfig()">清除配置</button>
+    <button class="btn" onclick="hideDrawer('llmDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveLLMConfig()">保存并启用</button>
+  </div>
+</div>
+<div id="brandDrawer" class="drawer">
+  <div class="drawer-head">品牌规则配置 <span class="muted" style="font-size:12px;font-weight:400">知识库负责经验，规则库负责边界</span>
+    <button class="btn btn-sm btn-ghost" onclick="hideDrawer('brandDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div><label>品牌</label><input id="br-brand" type="text" /></div>
+      <div><label>市场</label><input id="br-market" type="text" /></div>
+      <div><label>平台</label><input id="br-platform" type="text" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>当前佣金规则</label><input id="br-commission" type="text" /></div>
+    </div>
+    <div class="flex mt8">
+      <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600">
+        <input id="br-fixed" type="checkbox" /> 允许固定报酬
+      </label>
+      <div style="flex:1"><label>固定报酬范围</label><input id="br-fixed-range" type="text" /></div>
+    </div>
+    <label>广告支持规则</label><input id="br-ad" type="text" />
+    <label>样品规则</label><input id="br-sample" type="text" />
+    <label>物流规则</label><input id="br-ship" type="text" />
+    <label>促销配置</label><input id="br-promo" type="text" />
+    <label>当前产品（每行一个：名称：卖点）</label><textarea id="br-products" rows="4"></textarea>
+    <label>库存状态（JSON）</label><textarea id="br-inventory" rows="2"></textarea>
+    <label>不可承诺事项（每行一个）</label><textarea id="br-forbidden-promises" rows="3"></textarea>
+    <label>禁用词（每行一个）</label><textarea id="br-forbidden-words" rows="2"></textarea>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn" onclick="hideDrawer('brandDrawer')">取消</button>
+    <button class="btn btn-primary" onclick="saveBrandRules()">保存规则</button>
+  </div>
+</div>
+
+<script src="/static/js/common.js"></script>
+<script>
+async function loadDashboard() {
+  const res = await API.get("/api/dashboard");
+  const s = res.stats;
+
+  document.getElementById("stats").innerHTML = [
+    { n: s.today_creators, l: "今日处理达人", suffix: "位" },
+    { n: s.avg_reply_seconds, l: "AI 平均回复耗时", suffix: "秒" },
+    { n: s.direct_use_rate, l: "AI 直接采用率", suffix: "%" },
+    { n: s.manual_edit_rate, l: "人工平均修改率", suffix: "%" },
+    { n: s.high_risk_messages, l: "高风险消息", suffix: "条" },
+  ].map(
+    (x) => `
+    <div class="card stat-card">
+      <div class="stat-num">${x.n}<span style="font-size:16px;font-weight:700">${x.suffix}</span></div>
+      <div class="stat-label">${x.l}</div>
+    </div>`
+  ).join("");
+
+  const maxS = Math.max(...s.top_scenarios.map((t) => t.count));
+  document.getElementById("chart-scenarios").innerHTML = s.top_scenarios.map((t) => `
+    <div class="bar-row">
+      <div class="bar-label">${esc(t.name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(t.count / maxS) * 100}%"></div></div>
+      <div class="bar-num">${t.count}</div>
+    </div>`).join("");
+
+  const maxC = Math.max(...s.style_distribution.map((t) => t.count));
+  document.getElementById("chart-styles").innerHTML = s.style_distribution.map((t) => `
+    <div class="bar-row">
+      <div class="bar-label">${esc(t.style)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${maxC ? (t.count / maxC) * 100 : 0}%;background:linear-gradient(90deg,#7c6cf0,#8b5cf6)"></div></div>
+      <div class="bar-num">${t.count}</div>
+    </div>`).join("");
+
+  const reps = await API.get("/api/replies?limit=15");
+  const rows = reps.replies || [];
+  document.getElementById("replies-table").innerHTML = rows.length
+    ? rows.map((r) => `
+      <tr>
+        <td style="white-space:nowrap;color:var(--text-3);font-size:12px">${esc(r.created_at || "")}</td>
+        <td>${esc(r.creator_name || "—")}</td>
+        <td><span class="tag tag-purple">${esc(r.style_used || "—")}</span></td>
+        <td>${r.modified ? '<span class="tag tag-orange">人工修改</span>' : '<span class="tag tag-green">AI 直接采用</span>'}</td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.original_message || "")}</td>
+        <td style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.final_sent || "")}</td>
+      </tr>`).join("")
+    : '<tr><td colspan="6"><div class="empty">暂无保存记录——在工作台对回复点击「采用」后这里会显示</div></td></tr>';
+}
+loadDashboard();
+</script>
+</body>
+</html>

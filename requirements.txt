@@ -1,0 +1,10 @@
+# Creator BD Copilot - Python 依赖
+# 注意：torch 在 Dockerfile 中单独以 CPU 版安装，这里不列出，避免拉到 CUDA 版本
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+httpx==0.28.1
+numpy==2.5.2
+faiss-cpu==1.15.0
+sentence-transformers==5.7.0
+transformers==5.15.0
+huggingface_hub==1.27.0

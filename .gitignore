@@ -1,0 +1,27 @@
+# ===== 敏感信息（绝不提交）=====
+.access_token
+.env
+.env.*
+!.env.example
+*.log
+
+# ===== 运行时数据与生成物（含数据库/模型/索引，可能含密钥或体积过大）=====
+data/
+
+# ===== Python 缓存 =====
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# ===== 模型与大文件 =====
+**/models/
+
+# ===== 系统与编辑器 =====
+.DS_Store
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,17 @@
+# 构建上下文忽略：务必排除本地 2.1GB 模型与虚拟环境，否则构建会极慢/失败
+data/models
+data/copilot.db
+data/static
+**/__pycache__
+**/*.pyc
+.venv
+venv
+env
+node_modules
+.git
+.gitignore
+*.db
+.workbuddy
+.DS_Store
+README.md
+DEPLOY.md
