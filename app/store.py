@@ -77,7 +77,21 @@ def init_db():
                     {"name": "マット指紋防止ケース", "desc": "マット質感・指紋防止・多色展開"},
                     {"name": "LINKOO ストラップケース", "desc": "ストラップ付き・未発売"},
                     {"name": "MagicStand Pro", "desc": "360°回転スタンド・MagSafe"},
+                    {"name": "iPhone 18 冰透ケース（透明系）", "desc": "还原原机配色・镜头加高防护・四角防摔・抗黄变不发黄"},
+                    {"name": "iPhone 18 質簡ケース（磨砂系）", "desc": "磨砂防指纹・裸机质感・多色展開"},
                 ],
+                "new_machine_policy": {
+                    "new_machine": "iPhone 18",
+                    "main_lines": ["冰透（透明系）", "质简（磨砂系）"],
+                    "claimable_selling_points": [
+                        "还原原机配色", "镜头加高防护", "四角防摔",
+                        "抗黄变不发黄", "磨砂防指纹", "裸机质感",
+                    ],
+                    "forbidden_claims": [
+                        "未送测防摔等级/军规认证", "100%不发黄",
+                        "磁吸/钛金属（脚本库未出现，需官方确认）", "具体发货日期", "具体库存数量",
+                    ],
+                },
                 "inventory_status": {},
                 "sample_policy": "免费寄送样品1件，达人需在 TikTok Shop 自行申请",
                 "shipping_policy": "申请确认后尽快安排发货",
@@ -85,8 +99,9 @@ def init_db():
                 "forbidden_promises": [
                     "固定报酬金额", "具体发货日期", "缺货恢复时间", "广告预算额度",
                     "佣金比例变更", "销量数据", "产品参数（磁力/25W/MIL等）",
+                    "iPhone 18 未确认产品参数（防摔等级/军规/磁力/材质）", "新机具体发货日期",
                 ],
-                "forbidden_words": ["最安値", "最低价", "限时赠品", "HIKAKIN使用中（未确认）"],
+                "forbidden_words": ["最安値", "最低价", "限时赠品", "HIKAKIN使用中（未确认）", "軍規級防摔（未送測）", "100%不发黄（未確認）"],
             }
             conn.execute(
                 "INSERT INTO brand_rules (id, rules) VALUES (1, ?)",

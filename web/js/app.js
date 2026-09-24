@@ -25,6 +25,11 @@ const DEMO_CASES = {
     message: "TikTokでは配達済みになっていますが、\nまだ届いていません。",
     stage: "物流异常", goal: "解释异常",
   },
+  6: {
+    message: "iPhone 18 のケース、スタンド付きはありますか？\nサンプル申し込んで開封動画撮りたいです！",
+    stage: "样品申请", goal: "引导样品申请",
+    product: "iPhone 18 冰透ケース（透明系）",
+  },
 };
 
 /* ---------- 初始化 ---------- */
@@ -145,6 +150,7 @@ function loadDemo(n, el) {
   document.getElementById("msg-input").value = d.message;
   document.getElementById("cfg-stage").value = d.stage;
   document.getElementById("cfg-goal").value = d.goal;
+  if (d.product) document.getElementById("cfg-product").value = d.product;
   document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
   if (el) el.classList.add("active");
   toast(`已载入 Demo ${n}：${d.message.split("\n")[0].slice(0, 24)}…`);
